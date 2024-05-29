@@ -5,6 +5,8 @@ sator website
 """
 
 import logging
+import os
+from dotenv import load_dotenv
 from time import sleep
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -18,6 +20,8 @@ from selenium.common.exceptions import (
 from selenium.webdriver.chrome.service import Service as ChromeService
 from webdriver_manager.chrome import ChromeDriverManager
 from datetime import datetime, timedelta
+
+load_dotenv()
 
 logging.basicConfig(
     filename="scraper.log",
@@ -57,8 +61,14 @@ class Scraper:
         self.driver = None
 
     def __enter__(self):
+        options = webdriver.ChromeOptions()
+        prefs = {"download.default_directory": os.getenv("DOWNLOAD_DIR")}
+        options.add_experimental_option("prefs", prefs)
+        options.add_argument("--headless")  # Enable headless mode
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
         self.driver = webdriver.Chrome(
-            service=ChromeService(ChromeDriverManager().install())
+            service=ChromeService(ChromeDriverManager().install()), options=options
         )
         self.driver.get(self.URL)
         return self

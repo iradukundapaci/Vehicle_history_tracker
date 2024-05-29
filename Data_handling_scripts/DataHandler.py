@@ -27,9 +27,9 @@ class DataHandler:
     """
 
     BASE_FILE_NAME = "m_tracking"
-    DOWNLOAD_FOLDER_PATH = os.path.join(Path.home(), "Downloads")
-    CLEANED_DATA_FOLDER = os.path.join(os.getcwd(), "CleanData")
-    PROCESSED_DATA_FOLDER = os.path.join(os.getcwd(), "ProcessedData")
+    DOWNLOAD_FOLDER_PATH = os.getenv("DOWNLOAD_DIR")
+    CLEANED_DATA_FOLDER = os.getenv("CLEAN_DATA_DIR")
+    PROCESSED_DATA_FOLDER = os.getenv("PROCESSED_DATA_DIR")
     ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
     TILESET_ID = os.getenv("TILESET_ID")
 
@@ -58,6 +58,7 @@ class DataHandler:
                 dataframe = pd.read_csv(file_path, skiprows=2)
 
                 new_file_path = self.construct_new_file_path(dataframe)
+                dataframe = self.drop_columns(dataframe)
                 self.save_file(new_file_path, dataframe)
                 self.process_daily_data(dataframe, new_file_path)
                 self.delete_file(file_path, new_file_path)
@@ -94,23 +95,36 @@ class DataHandler:
         """
         try:
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            dataframe.to_csv(file_path, index=False)
+            logging.info(f"Saved file {file_path}")
+        except Exception as e:
+            logging.error(f"Error saving file {file_path}: {e}")
+            raise
 
+    def drop_columns(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Drop unecessary columns and replace the Position column data
+
+        args:
+            data: dataframe of csv
+
+        return: cleaned data frame
+        """
+        try:
             # Drop unnecessary columns
-            dataframe.drop(
+            data.drop(
                 ["Name", "Serial Number", "Type", "Speed", "Owner"],
                 axis=1,
                 inplace=True,
             )
 
             # Replace Position values
-            dataframe["Position"] = dataframe["Position"].replace(
-                {1: "Moving", 0: "Stopped"}
-            )
+            data["Position"] = data["Position"].replace({1: "Moving", 0: "Stopped"})
 
-            dataframe.to_csv(file_path, index=False)
-            logging.info(f"Saved file {file_path}")
+            logging.info(f"Dropped unnecesary columns")
+            return data
         except Exception as e:
-            logging.error(f"Error saving file {file_path}: {e}")
+            logging.error(f"Error droping columns: {e}")
             raise
 
     def delete_file(self, file_path: str, name_of_file: str) -> None:
@@ -130,6 +144,8 @@ class DataHandler:
         """
         processed_data = []
         new_file_path = file_path.replace("CleanData", "ProcessedData")
+        logging.info(f"Processing the cleaned data for {file_path}")
+        data = data.drop_duplicates(subset=["Latitude", "Longitude"])
 
         for _, row in data.iterrows():
             try:
