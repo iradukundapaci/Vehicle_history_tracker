@@ -5,6 +5,7 @@ sator website
 """
 
 import logging
+from time import sleep
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select, WebDriverWait
@@ -149,6 +150,7 @@ class Scraper:
             end_date_field.send_keys(end_date)
 
             download_button.click()
+            sleep(5)
             logging.info(
                 f"Downloaded report for plate number: {self.plate_number} from {start_date} to {end_date}"
             )
