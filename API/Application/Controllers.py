@@ -61,7 +61,7 @@ def add_sator_account():
     password = data.get("password")
 
     sator_account = SatorAccount(
-        user_id=current_user_id, userName=userName, password_plain=password
+        user_id=current_user_id, userName=userName, password=password
     )
     db.session.add(sator_account)
     db.session.commit()
@@ -83,7 +83,7 @@ def add_vehicle_plate():
         return jsonify({"message": "Sator account not found"}), 404
 
     vehicle_plate = VehiclePlate(
-        sator_account_id=sator_account_id, plate_number=plate_number
+        sator_account_id=sator_account_id, plateNumber=plate_number
     )
     db.session.add(vehicle_plate)
     db.session.commit()
@@ -118,7 +118,7 @@ def update_vehicle_plate(id):
     if not vehicle_plate or vehicle_plate.sator_account.user_id != current_user_id:
         return jsonify({"message": "Vehicle plate number not found"}), 404
 
-    vehicle_plate.plate_number = new_plate_number
+    vehicle_plate.plateNumber = new_plate_number
     db.session.commit()
 
     return jsonify({"message": "Vehicle plate number updated successfully"}), 200

@@ -11,7 +11,7 @@ class User(db.Model):
     lastName = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     userName = db.Column(db.String(50), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128), nullable=False)
+    password_hash = db.Column(db.String(250), nullable=False)
     sator_account = db.relationship(
         "SatorAccount", back_populates="user", uselist=False
     )
