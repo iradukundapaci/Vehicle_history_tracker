@@ -50,7 +50,21 @@ class VehicleTrackerCLI(cmd.Cmd):
         else:
             print("Failed to add vehicle plate number")
 
-    # Implement other methods similarly for other functionalities
+    def do_download_report(self, arg):
+        """Download report based on vehicle ID and date"""
+        vehicle_id = input("Enter vehicle ID: ")
+        date = input("Enter date (YYYY-MM-DD): ")
+        response = requests.get(
+            f"http://localhost:5000/download_report?vehicle_id={vehicle_id}&date={date}",
+            headers={"Authorization": f"Bearer {self.jwt_token}"},
+        )
+        if response.status_code == 200:
+            # Save the downloaded file
+            with open("report.csv", "wb") as f:
+                f.write(response.content)
+            print("Report downloaded successfully")
+        else:
+            print("Failed to download report")
 
     def do_exit(self, arg):
         """Exit the program"""
