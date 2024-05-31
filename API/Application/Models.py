@@ -44,6 +44,7 @@ class SatorAccount(db.Model):
     __tablename__ = "sator_accounts"
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    names = db.Column(db.String(200), nullable=False)
     userName = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(50), nullable=False)
     user = db.relationship("User", back_populates="sator_account")
@@ -55,13 +56,14 @@ class SatorAccount(db.Model):
         return f"<SatorAccount {self.userName}>"
 
 
-class VehiclePlate(db.Model):
+class Vehicle(db.Model):
     """
-    Vehicle plate model for tables mapping
+    Vehicle model for tables mapping
     """
 
-    __tablename__ = "vehicle_plates"
+    __tablename__ = "vehicle"
     id = db.Column(db.Integer, primary_key=True)
+    vehicleType = db.Column(db.String(20), nullable=False)
     plateNumber = db.Column(db.String(20), unique=True, nullable=False)
     sator_account_id = db.Column(
         db.Integer, db.ForeignKey("sator_accounts.id"), nullable=False
