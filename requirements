@@ -1,38 +1,34 @@
 user interface(cmd excutable file):
-	-login
-	-signup
-	-logout
-	-Add account username and password
-	-Add vehicle Plate Number
-	-Delete Vehicle Plate Number
-	-Update vehicle Plate Number
-	-See report based on given dates and time
-	-Download report
+-login
+-signup
+-logout
+-Add account username and password
+-Add vehicle Plate Number
+-Delete Vehicle Plate Number
+-Update vehicle Plate Number
+-Download report
 
 Backend:
--Getting Data(Webscraper):
-	- Login into sator account
-	- Download unclean report based on dates and time(defualt Plate Number date and time are yesterday)
+-Getting Data(Webscraper): - Login into sator account - Download unclean report based on dates and time(defualt Plate Number date and time are yesterday)
 
 -Cleaning Data(DataHandler):(done)
-	-Rename and clean the downloaded file
-	-Save file (path, dataframe)
-	-Delete downloaded files
-	-Turn GPS co-ordinates into location
-	-Get data based on plate Number, date and time
+-Rename and clean the downloaded file
+-Save file (path, dataframe)
+-Delete downloaded files
+-Turn GPS co-ordinates into location
+-generate report based plate Number and date
 
 -Scheduler:(done)
-	-Schedule report download
-	-Schedule report cleaning
-	-Schedule whatssap message sending
+-Schedule report download
+-Schedule report cleaning
+-Schedule whatssap message sending
 
 -api:
-	-login
-	-signup
-	-logout
-	-Add account username and password
-	-Add vehicle Plate Number
-	-Delete Vehicle Plate Number
-	-Update vehicle Plate Number
-	-See report based on given dates and time
-	-Download report
+-login
+-signup
+-logout
+-Add account username and password
+-Add vehicle Plate Number
+-Delete Vehicle Plate Number
+-Update vehicle Plate Number
+-Download report

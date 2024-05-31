@@ -1,2 +1,8 @@
 Data_handling_scripts/.env
 CleanData
+API/.env
+API/Application/__pycache__
+Data_handling_scripts/__pycache__
+ProcessedData
+m_tracking.csv
+data_handler.log

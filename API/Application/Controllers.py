@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from werkzeug.security import generate_password_hash, check_password_hash
 from .Models import db, User, SatorAccount, VehiclePlate
+from Data_handling_scripts.DataHandler import DataHandler
 
 api = Blueprint("api", __name__)
 
@@ -68,11 +69,15 @@ def add_sator_account():
     """
     current_user_id = get_jwt_identity()
     data = request.json
+    names = data.get("names")
     userName = data.get("userName")
     password = data.get("password")
 
     sator_account = SatorAccount(
-        user_id=current_user_id, userName=userName, password=password
+        user_id=current_user_id,
+        names=names,
+        userName=userName,
+        password=generate_password_hash(password),
     )
     db.session.add(sator_account)
     db.session.commit()
@@ -89,6 +94,7 @@ def update_sator_account(id):
     """
     current_user_id = get_jwt_identity()
     data = request.json
+    new_names = data.get("names")
     new_userName = data.get("userName")
     new_password = data.get("password")
 
@@ -99,105 +105,218 @@ def update_sator_account(id):
 
     # Update the fields
     sator_account.userName = new_userName if new_userName else sator_account.userName
-    sator_account.password = new_password if new_password else sator_account.password
+    sator_account.names = new_names if new_names else sator_account.names
+    sator_account.password = (
+        generate_password_hash(new_password) if new_password else sator_account.password
+    )
 
     db.session.commit()
 
     return jsonify({"message": "Sator account updated successfully"}), 200
 
 
-# Add Vehicle Plate Number
-@api.route("/vehicle_plate", methods=["POST"])
+# View Sator Account Details
+@api.route("/sator_account", methods=["GET"])
 @jwt_required()
-def add_vehicle_plate():
+def view_sator_account():
     """
-    Add vehicle plate number
+    View Sator account details
+    """
+    current_user_id = get_jwt_identity()
+
+    # Find the Sator account associated with the current user
+    sator_account = SatorAccount.query.filter_by(user_id=current_user_id).first()
+    if not sator_account:
+        return jsonify({"message": "Sator account not found"}), 404
+
+    # Return the Sator account details
+    account_details = {
+        "id": sator_account.id,
+        "names": sator_account.names,
+        "userName": sator_account.userName,
+        "password": sator_account.password,
+    }
+
+    return jsonify({"sator_account": account_details}), 200
+
+
+# Add Vehicle
+@api.route("/vehicle", methods=["POST"])
+@jwt_required()
+def add_vehicle():
+    """
+    Add vehicle
     """
     current_user_id = get_jwt_identity()
     data = request.json
-    sator_account_id = data.get("sator_account_id")
     plate_number = data.get("plate_number")
+    vehicle_type = data.get("vehicle_type")
 
-    sator_account = SatorAccount.query.get(sator_account_id)
-    if not sator_account or sator_account.user_id != current_user_id:
+    # Find the Sator account using the current user ID
+    sator_account = SatorAccount.query.filter_by(user_id=current_user_id).first()
+    if not sator_account:
         return jsonify({"message": "Sator account not found"}), 404
 
     vehicle_plate = VehiclePlate(
-        sator_account_id=sator_account_id, plateNumber=plate_number
+        sator_account_id=sator_account.id,
+        plateNumber=plate_number,
+        vehicleType=vehicle_type,
     )
     db.session.add(vehicle_plate)
     db.session.commit()
 
-    return jsonify({"message": "Vehicle plate number added successfully"}), 201
+    return jsonify({"message": "Vehicle added successfully"}), 201
 
 
-# Delete Vehicle Plate Number
-@api.route("/vehicle_plate/<int:id>", methods=["DELETE"])
+# Delete Vehicle
+@api.route("/vehicle/<string:plate_number>", methods=["DELETE"])
 @jwt_required()
-def delete_vehicle_plate(id):
+def delete_vehicle(plate_number):
+    """
+    Delete vehicle based on the plate number
+    """
     current_user_id = get_jwt_identity()
-    vehicle_plate = VehiclePlate.query.get(id)
-    if not vehicle_plate or vehicle_plate.sator_account.user_id != current_user_id:
-        return jsonify({"message": "Vehicle plate number not found"}), 404
+
+    # Find the vehicle plate using the plate number and ensure it belongs to the current user's Sator account
+    vehicle_plate = (
+        VehiclePlate.query.join(SatorAccount)
+        .filter(
+            VehiclePlate.plateNumber == plate_number,
+            SatorAccount.user_id == current_user_id,
+        )
+        .first()
+    )
+
+    if not vehicle_plate:
+        return jsonify({"message": "Vehicle not found"}), 404
 
     db.session.delete(vehicle_plate)
     db.session.commit()
 
-    return jsonify({"message": "Vehicle plate number deleted successfully"}), 200
+    return jsonify({"message": "Vehicle deleted successfully"}), 200
 
 
-# Update Vehicle Plate Number
-@api.route("/vehicle_plate/<int:id>", methods=["PUT"])
+# Route to see all vehicles registered under a user
+@api.route("/user/vehicles", methods=["GET"])
 @jwt_required()
-def update_vehicle_plate(id):
+def get_user_vehicles():
+    """
+    Endpoint to get all vehicles registered under the current user
+
+    Returns:
+        JSON containing the list of vehicles
+    """
+    current_user_id = get_jwt_identity()
+
+    # Retrieve the sator account associated with the current user
+    sator_account = SatorAccount.query.filter_by(user_id=current_user_id).first()
+    if not sator_account:
+        return jsonify({"message": "Sator account not found"}), 404
+
+    # Retrieve all vehicle plates associated with the sator account
+    vehicles = VehiclePlate.query.filter_by(sator_account_id=sator_account.id).all()
+    if not vehicles:
+        return jsonify({"message": "No vehicles found"}), 404
+
+    # Create a list of vehicle details
+    vehicle_list = []
+    for vehicle in vehicles:
+        vehicle_details = {
+            "id": vehicle.id,
+            "plate_number": vehicle.plateNumber,
+            "vehicle_type": vehicle.vehicleType,  # Assuming vehicleType is a field
+            "registered_on": vehicle.registered_on,  # Assuming registered_on is a field
+        }
+        vehicle_list.append(vehicle_details)
+
+    return jsonify({"vehicles": vehicle_list}), 200
+
+
+# Update Vehicle Plate Number and Vehicle Type
+@api.route("/vehicle_plate/<string:plate_number>", methods=["PUT"])
+@jwt_required()
+def update_vehicle_plate(plate_number):
+    """
+    Update vehicle plate number and vehicle type based on the plate number
+    """
     current_user_id = get_jwt_identity()
     data = request.json
     new_plate_number = data.get("plate_number")
+    new_vehicle_type = data.get("vehicle_type")
 
-    vehicle_plate = VehiclePlate.query.get(id)
-    if not vehicle_plate or vehicle_plate.sator_account.user_id != current_user_id:
+    # Find the vehicle plate using the plate number and ensure it belongs to the current user's Sator account
+    vehicle_plate = (
+        VehiclePlate.query.join(SatorAccount)
+        .filter(
+            VehiclePlate.plateNumber == plate_number,
+            SatorAccount.user_id == current_user_id,
+        )
+        .first()
+    )
+
+    if not vehicle_plate:
         return jsonify({"message": "Vehicle plate number not found"}), 404
 
-    vehicle_plate.plateNumber = new_plate_number
+    # Update the fields if provided in the request
+    vehicle_plate.plateNumber = (
+        new_plate_number if new_plate_number else vehicle_plate.plateNumber
+    )
+    vehicle_plate.vehicleType = (
+        new_vehicle_type if new_vehicle_type else vehicle_plate.vehicleType
+    )
+
     db.session.commit()
 
-    return jsonify({"message": "Vehicle plate number updated successfully"}), 200
-
-
-# See Report Based on Given Dates and Time
-@api.route("/report", methods=["GET"])
-@jwt_required()
-def see_report():
-    start_date = request.args.get("start_date")
-    end_date = request.args.get("end_date")
-
-    # Assume we have a function to generate the report
-    report = generate_report(start_date, end_date)
-
-    return jsonify(report), 200
-
-
-# Download Report Based on Dates and Time
-@api.route("/download_report", methods=["GET"])
-@jwt_required()
-def download_report():
-    start_date = request.args.get("start_date")
-    end_date = request.args.get("end_date")
-
-    # Assume we have a function to generate and return the report file
-    report_file = generate_report_file(start_date, end_date)
-
     return (
-        jsonify({"message": "Report file generated successfully", "file": report_file}),
+        jsonify(
+            {"message": "Vehicle plate number and vehicle type updated successfully"}
+        ),
         200,
     )
 
 
-def generate_report(start_date, end_date):
-    # Mock implementation, replace with actual report generation logic
-    return {"start_date": start_date, "end_date": end_date, "data": []}
+# Download Report Based on Date
+@api.route("/download_report", methods=["GET"])
+@jwt_required()
+def download_report():
+    """
+    Endpoint for downloading report based on date
 
+    Returns:
+        JSON containing the message and the report file
+    """
+    # Extract the required parameters from the query string
+    vehicle_id = request.args.get("vehicle_id")
+    date = request.args.get("date")
 
-def generate_report_file(start_date, end_date):
-    # Mock implementation, replace with actual report file generation logic
-    return "/path/to/report/file.csv"
+    # Ensure all required parameters are provided
+    if not vehicle_id or not date:
+        return jsonify({"message": "Missing required parameters"}), 400
+
+    # Retrieve vehicle and account details from the database
+    vehicle_plate = VehiclePlate.query.get(vehicle_id)
+    if not vehicle_plate:
+        return jsonify({"message": "Vehicle not found"}), 404
+
+    sator_account = SatorAccount.query.get(vehicle_plate.sator_account_id)
+    if not sator_account:
+        return jsonify({"message": "Sator account not found"}), 404
+
+    vehicle_owner = sator_account.names
+    vehicle_type = vehicle_plate.vehicleType
+    license_plate = vehicle_plate.plateNumber
+    data_handler = DataHandler()
+
+    # Generate the report file based on the provided parameters
+    report_file = data_handler.generate_report_file(
+        vehicle_owner, vehicle_type, license_plate, date
+    )
+
+    if not report_file:
+        return jsonify({"message": "Report generation failed"}), 500
+
+    # Return the report file as a response
+    return (
+        jsonify({"message": "Report file generated successfully", "file": report_file}),
+        200,
+    )

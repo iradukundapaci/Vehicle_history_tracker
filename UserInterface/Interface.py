@@ -15,7 +15,7 @@ class VehicleTrackerCLI(cmd.Cmd):
         username = input("Enter username: ")
         password = input("Enter password: ")
         response = requests.post(
-            "http://localhost:5000/login",
+            "http://localhost:5000/api/login",
             json={"userName": username, "password": password},
         )
         if response.status_code == 200:
