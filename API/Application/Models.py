@@ -5,6 +5,10 @@ db = SQLAlchemy()
 
 
 class User(db.Model):
+    """
+    User model for tables mapping
+    """
+
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
     firstName = db.Column(db.String(50), nullable=False)
@@ -33,6 +37,10 @@ class User(db.Model):
 
 
 class SatorAccount(db.Model):
+    """
+    Sator Account model for tables mapping
+    """
+
     __tablename__ = "sator_accounts"
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
@@ -48,6 +56,10 @@ class SatorAccount(db.Model):
 
 
 class VehiclePlate(db.Model):
+    """
+    Vehicle plate model for tables mapping
+    """
+
     __tablename__ = "vehicle_plates"
     id = db.Column(db.Integer, primary_key=True)
     plateNumber = db.Column(db.String(20), unique=True, nullable=False)
