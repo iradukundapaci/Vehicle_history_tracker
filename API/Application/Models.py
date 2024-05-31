@@ -10,6 +10,7 @@ class User(db.Model):
     firstName = db.Column(db.String(50), nullable=False)
     lastName = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
+    whatsappNmber = db.Column(db.String(15), unique=True, nullable=False)
     userName = db.Column(db.String(50), unique=True, nullable=False)
     password_hash = db.Column(db.String(250), nullable=False)
     sator_account = db.relationship(
