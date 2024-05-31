@@ -9,10 +9,14 @@ api = Blueprint("api", __name__)
 # Signup route
 @api.route("/signup", methods=["POST"])
 def signup():
+    """
+    User signup handler
+    """
     data = request.json
     firstName = data.get("firstName")
     lastName = data.get("lastName")
     email = data.get("email")
+    whatsappNumber = data.get("whatsappNumber")
     userName = data.get("userName")
     password = data.get("password")
 
@@ -26,6 +30,7 @@ def signup():
         firstName=firstName,
         lastName=lastName,
         email=email,
+        whatsappNumber=whatsappNumber,
         userName=userName,
         password_hash=generate_password_hash(password),
     )
@@ -39,6 +44,9 @@ def signup():
 # Login route to get JWT
 @api.route("/login", methods=["POST"])
 def login():
+    """
+    User login handler
+    """
     data = request.json
     userName = data.get("userName")
     password = data.get("password")
@@ -55,6 +63,9 @@ def login():
 @api.route("/sator_account", methods=["POST"])
 @jwt_required()
 def add_sator_account():
+    """
+    Add sator account
+    """
     current_user_id = get_jwt_identity()
     data = request.json
     userName = data.get("userName")
@@ -69,10 +80,39 @@ def add_sator_account():
     return jsonify({"message": "Sator account added successfully"}), 201
 
 
+# Update Sator Account
+@api.route("/sator_account/<int:id>", methods=["PUT"])
+@jwt_required()
+def update_sator_account(id):
+    """
+    Update Sator account
+    """
+    current_user_id = get_jwt_identity()
+    data = request.json
+    new_userName = data.get("userName")
+    new_password = data.get("password")
+
+    # Find the Sator account by ID
+    sator_account = SatorAccount.query.get(id)
+    if not sator_account or sator_account.user_id != current_user_id:
+        return jsonify({"message": "Sator account not found"}), 404
+
+    # Update the fields
+    sator_account.userName = new_userName if new_userName else sator_account.userName
+    sator_account.password = new_password if new_password else sator_account.password
+
+    db.session.commit()
+
+    return jsonify({"message": "Sator account updated successfully"}), 200
+
+
 # Add Vehicle Plate Number
 @api.route("/vehicle_plate", methods=["POST"])
 @jwt_required()
 def add_vehicle_plate():
+    """
+    Add vehicle plate number
+    """
     current_user_id = get_jwt_identity()
     data = request.json
     sator_account_id = data.get("sator_account_id")
