@@ -3,6 +3,7 @@
 Module to rename, clean and move downloaded GPS data files
 """
 
+import json
 import os
 import pandas as pd
 import logging
@@ -229,3 +230,45 @@ class DataHandler:
         except KeyError as e:
             logging.error(f"Missing expected key in the response: {e}")
             return {}
+
+    def generate_report_file(
+        self, vehicle_owner: str, vehicle_type: str, license_plate: str, date: str
+    ) -> str:
+        """
+        Generate a report for the provided date
+
+        args:
+            vehicle_owner: owner of the vehicle
+            vehicle_type: type of the vehicle
+            license_plate: license plate of the vehicle
+            date: date to search for (required)
+
+        return: path to the generated report file
+        """
+        try:
+            # Parse the date string
+            date_str = pd.to_datetime(date).strftime("%Y-%m-%d")
+            year, month = date_str.split("-")[0], date_str.split("-")[1]
+
+            # Construct the file path
+            file_path = os.path.join(
+                self.PROCESSED_DATA_FOLDER,
+                vehicle_owner,
+                vehicle_type,
+                license_plate,
+                year,
+                month,
+                f"{date_str}.csv",
+            )
+
+            # Check if the file exists
+            if not Path(file_path).exists():
+                logging.warning(f"No data found for the date {date}")
+                return None
+
+            logging.info(f"Generated report file: {file_path}")
+
+            return file_path
+        except Exception as e:
+            logging.error(f"Error generating report for date {date}: {e}")
+            return None
