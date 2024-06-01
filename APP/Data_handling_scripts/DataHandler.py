@@ -34,7 +34,7 @@ class DataHandler:
     ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
     TILESET_ID = os.getenv("TILESET_ID")
 
-    def rename_and_clean_file(self) -> bool:
+    def rename_and_clean_file(self) -> str:
         """
         Search for yesterday downloaded files for renaming and cleaning
 
@@ -51,8 +51,6 @@ class DataHandler:
             and file.startswith(self.BASE_FILE_NAME)
         ]
 
-        success = True
-
         for file_name in file_names:
             try:
                 file_path = os.path.join(self.DOWNLOAD_FOLDER_PATH, file_name)
@@ -61,15 +59,15 @@ class DataHandler:
                 new_file_path = self.construct_new_file_path(dataframe)
                 dataframe = self.drop_columns(dataframe)
                 self.save_file(new_file_path, dataframe)
-                self.process_daily_data(dataframe, new_file_path)
-                self.delete_file(file_path, new_file_path)
+                dataframe_file_path = self.process_daily_data(dataframe, new_file_path)
 
+                self.delete_file(file_path, new_file_path)
                 logging.info(f"File {new_file_path} renamed and cleaned successfully")
             except Exception as e:
                 logging.error(f"Error processing file {file_name}: {e}")
-                success = False
+                return None
 
-        return success
+        return dataframe_file_path
 
     def construct_new_file_path(self, dataframe: pd.DataFrame) -> str:
         """
@@ -139,7 +137,7 @@ class DataHandler:
             logging.error(f"Error deleting file {file_path}: {e}")
             raise
 
-    def process_daily_data(self, data: pd.DataFrame, file_path: str) -> bool:
+    def process_daily_data(self, data: pd.DataFrame, file_path: str) -> str:
         """
         Process yesterday downloaded GPS data for all users
         """
@@ -160,7 +158,10 @@ class DataHandler:
                     location = self.extract_locations(response)
                     processed_data.append(
                         {
-                            **location,
+                            "Province": location["Province"],
+                            "District": location["District"],
+                            "Sector": location["Sector"],
+                            "Cell": location["Cell"],
                             "Position": position,
                             "Date Recorded": date_recorded,
                         }
@@ -176,9 +177,9 @@ class DataHandler:
             self.save_file(new_file_path, processed_df)
         except Exception as e:
             logging.error(f"Error saving processed file {new_file_path}: {e}")
-            return False
+            return None
 
-        return True
+        return new_file_path
 
     def get_location(self, longitude: float, latitude: float) -> List[Dict[str, Any]]:
         """
@@ -224,7 +225,14 @@ class DataHandler:
                 level = feature["properties"].get("Level")
                 shape_name = feature["properties"].get("shapeName")
                 if level and shape_name:
-                    adm_levels[level] = shape_name
+                    if level == "ADM1":
+                        adm_levels["Province"] = shape_name
+                    elif level == "ADM2":
+                        adm_levels["District"] = shape_name
+                    elif level == "ADM3":
+                        adm_levels["Sector"] = shape_name
+                    elif level == "ADM4":
+                        adm_levels["Cell"] = shape_name
 
             return adm_levels
         except KeyError as e:
