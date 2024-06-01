@@ -5,6 +5,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 from Data_handling_scripts.DataHandler import DataHandler
 from Data_handling_scripts.WebScraper import Scraper
+from Data_handling_scripts.MessageHandle import MessageHandler
 
 # from .DataHandler import DataHandler
 
@@ -34,30 +35,40 @@ def download_report(user_email, password, plate_number):
 
 
 def clean_report():
-    logging.info("Starting report cleaning...")
+    """
+    Cleans the report by renaming and cleaning the file using the DataHandler class.
+
+    Returns:
+        bool: True if the report cleaning is successful, False otherwise.
+    """
     try:
         handler = DataHandler()
-        if handler.rename_and_clean_file():
-            logging.info("Report cleaning completed.")
-        else:
-            logging.error("Report cleaning failed")
-            return False
+        logging.info("Report cleaning completed.")
+        return handler.rename_and_clean_file()
     except Exception as e:
         logging.error(f"An error occurred during report cleaning: {e}")
-        return False
-    return True
+        return None
 
 
 def main():
     try:
-        user_email = "rutamizabiri@satorrwanda.rw"  # Replace with actual user email
-        password = "8266"  # Replace with actual password
-        plate_number = "RAC 151 S"  # Replace with actual plate number
+        user_email = "rutamizabiri@satorrwanda.rw"
+        password = "8266"
+        plate_number = "RAC 151 S"
 
         download_success = download_report(user_email, password, plate_number)
         if download_success:
-            if clean_report():
-                logging.info("All tasks completed successfully.")
+            file_path = clean_report()
+            if file_path:
+                messanger = MessageHandler(file_path)
+                response = messanger.send_whatsapp_message(
+                    messanger.get_summary_message()
+                )
+                if response:
+                    logging.info("Message sent successfully.")
+                    logging.info("All tasks completed successfully.")
+                else:
+                    logging.error("Message sending failed.")
             else:
                 logging.error("Report cleaning failed.")
         else:
