@@ -64,7 +64,7 @@ class Scraper:
         options = webdriver.ChromeOptions()
         prefs = {"download.default_directory": os.getenv("DOWNLOAD_DIR")}
         options.add_experimental_option("prefs", prefs)
-        options.add_argument("--headless")  # Enable headless mode
+        # options.add_argument("--headless")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         self.driver = webdriver.Chrome(
